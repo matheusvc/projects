@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+import time
+import serial
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+
+ser = serial.Serial(
+              
+    port='/dev/ttyUSB0',
+    baudrate = 19200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+    )
+
+def popupmsg(msg):
+    
+    popup = tk.Tk()
+    popup.wm_title("!")
+    label = ttk.Label(popup, text=msg)
+    label.pack(side="top", fill="x", pady=10)
+    B1 = ttk.Button(popup, text="Okay", command = popup.destroy)
+    B1.pack()
+    popup.mainloop()
+    
+    
+def enough_signal_write():
+    ser.write(str.encode('AT+SBDWT\r'))
+    time.sleep(7)
+    ser.write(str.encode('teste abcde\r'))
+    time.sleep(2)
+    ser.write(str.encode('AT+SBDIX\r'))
+    time.sleep(6)
+    
+    while True:
+        v = ser.readline()
+        b = v.rstrip()
+        n = b.decode('utf-8')
+        print(n)
+        
+def checking_signal():
+    
+    global Signal
+    
+    Signal = False
+    
+    while Signal is not True:    
+        x = ser.readline()
+        y = x.rstrip()
+        z = y.decode('utf-8')
+        print(z)
+        ser.write(str.encode('AT+CSQ\r'))
+        time.sleep(5)
+        if (z.startswith("+CSQ")):
+            a = int(z[5])
+            if a >= 3:
+                print('Qualidade do sinal', z[5], 'é suficiente')
+                Signal = True
+                read_mt_message()
+            else:
+                print('Buscando Sinal...')
+                
+def force_read():
+    ser.write(str.encode('AT+SBDIX\r'))
+    time.sleep(10)
+    ser.write(str.encode('AT+SBDRT\r'))
+    time.sleep(3)
+    while True:
+        rec = ser.readline()
+        rec1 = rec.rstrip()
+        rec2 = rec1.decode('utf-8')
+        print(rec2)
+                
+def read_mt_message():
+    global lido
+    
+    lido = False
+
+    while lido is not True:
+
+        q = ser.readline()
+        w = q.rstrip()
+        e = w.decode('utf-8')
+        if (e == 'SBDRING'):
+
+            print ('Ring Alert recebido')
+            lido = True
+            ser.write(str.encode('AT+SBDIX\r'))
+            time.sleep(1)
+            ser.write(str.encode('AT+SBDRT\r'))
+            time.sleep(2)
+            assist_var = 0
+            lista = []
+            while True:
+                u = ser.readline()
+                i = u.rstrip()
+                o = i.decode('utf-8')
+                if len(o) > 1 :
+                    lista.append(o)
+                    assist_var = assist_var + 1
+                    print(lista)
+                    print('assist_var = ', assist_var)
+                    if assist_var == 7:
+                        #print(lista[5])
+                        popupmsg(lista[5])
+                        break
+                        
+                
+                    
+
+        else:
+
+            print ('Aguardando Ring Alert')
+            time.sleep(1)
+
+
+
+            
+            
+checking_signal()
