@@ -15,34 +15,43 @@ ser = serial.Serial(
     timeout=1
     )
 
+
 lock = threading.Lock()
 
-class TestThreading(object):
+
+class TestThreading():
     
     def __init__(self):
+        
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
         thread.start()
+        thread.join()
 
     def run(self):
+        
         lock.acquire()
+        
         while True:
             x = ser.readline()
             y = x.rstrip()
             z = y.decode('utf-8')
             print(z)
             ser.write(str.encode('AT+CSQ\r'))
-            time.sleep(5)
+            time.sleep(2)
             if (z.startswith("+CSQ")):
                 a = int(z[5])
                 if a >= 3:
                     print('Qualidade do sinal', z[5], 'é suficiente')
-                    lock.release()
-                    read_mt_message()
+                    #lock.release() #Quando sinal é suficiente, há erro com Lock no próximo ciclo do looping (?)
+                    time.sleep(6)
+                    #read_mt_message()
                 else:
                     print('Buscando Sinal...')
-
+                    time.sleep(0.5)
+        
+        
+        
 tr = TestThreading()
 time.sleep(1)
-print(' : First output')
-
+print('First output')
