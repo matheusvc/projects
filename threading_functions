@@ -1,0 +1,50 @@
+#!/usr/bin/env pythonhttp://localhost:8888/notebooks/Untitled1.ipynb?kernel_name=python3#
+import time
+import serial
+import tkinter as tk
+from tkinter import ttk
+import threading
+
+ser = serial.Serial(
+              
+    port='/dev/ttyUSB0',
+    baudrate = 19200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+    )
+
+lock = threading.Lock()
+
+def checking_signal():
+    
+    Signal = False
+    
+    lock.acquire()
+    
+    while Signal is not True:
+        
+        x = ser.readline()
+        y = x.rstrip()
+        z = y.decode('utf-8')
+        print(z)
+        ser.write(str.encode('AT+CSQ\r'))
+        time.sleep(5)
+        if (z.startswith("+CSQ")):
+            a = int(z[5])
+            if a >= 3:
+                print('Qualidade do sinal', z[5], 'é suficiente')
+                Signal = True
+                #read_mt_message()
+                lock.release()
+                time.sleep(6)
+            else:
+                print('Buscando Sinal...')
+                lock.release()
+                time.sleep(0.5)
+
+
+                    
+t = threading.Thread(target = checking_signal)
+t.start()
