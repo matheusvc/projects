@@ -17,34 +17,33 @@ ser = serial.Serial(
 
 lock = threading.Lock()
 
-def checking_signal():
+def checking_signal(lock):
     
-    Signal = False
-    
-    lock.acquire()
-    
-    while Signal is not True:
+    while True:
         
-        x = ser.readline()
-        y = x.rstrip()
-        z = y.decode('utf-8')
-        print(z)
-        ser.write(str.encode('AT+CSQ\r'))
-        time.sleep(5)
-        if (z.startswith("+CSQ")):
-            a = int(z[5])
-            if a >= 3:
-                print('Qualidade do sinal', z[5], 'é suficiente')
-                Signal = True
-                #read_mt_message()
-                lock.release()
-                time.sleep(6)
-            else:
-                print('Buscando Sinal...')
-                lock.release()
-                time.sleep(0.5)
+        with lock:
+            
+            print('Lock Acquired')
+            x = ser.readline()
+            y = x.rstrip()
+            z = y.decode('utf-8')
+            print(z)
+            ser.write(str.encode('AT+CSQ\r'))
+            time.sleep(5)
+            if (z.startswith("+CSQ")):
+                a = int(z[5])
+                if a >= 3:
+                    print('Qualidade do sinal', z[5], 'é suficiente')
+                    Signal = True
+                    #read_mt_message()
+                    lock.release()
+                    time.sleep(6)
+                else:
+                    print('Buscando Sinal...')
+                    time.sleep(0.5)
 
 
                     
-t = threading.Thread(target = checking_signal)
+t = threading.Thread(target = checking_signal, args = (lock,))
 t.start()
+t.join()
