@@ -3,7 +3,7 @@ import time
 import serial
 import tkinter as tk
 from tkinter import ttk
-import threading
+import threading, queue
 
 ser = serial.Serial(
               
@@ -23,10 +23,6 @@ class MyThread(threading.Thread):
         
     def run(self):
         
-        global i
-        
-        i = 0
-        
         with lock:
             while True:
                 if lock.locked() == True:
@@ -41,14 +37,16 @@ class MyThread(threading.Thread):
                         a = int(z[5])
                         if a >= 3:
                             i = i + 1
+                            myq.put(i)
                             lock.release()
                             print('Qualidade do sinal', z[5], 'é suficiente')
-                            print('primeiro print i: ',i)
+                            print(myq)
                             print("Lock state : ", lock.locked())
-                            time.sleep(15)
+                            time.sleep(25)
                             if i >= 1:
                                 i = i - 1
-                                print('segundo print i: ',i)
+                                myq.empty()
+                                print(myq)
                                 time.sleep(3)
                             
                         else:
@@ -67,9 +65,7 @@ class Reader(threading.Thread):
         
     def run(self):
         
-        global i
-        
-        if i >= 1:
+        if myq.empty() == False:
             print('Reader starting, i greater than 1')
             with lock:
                 while True:
@@ -102,6 +98,9 @@ class Reader(threading.Thread):
                     
                     
 lock = threading.Lock()
+
+myq = queue.Queue()
+
                     
                     
 thread = MyThread()
