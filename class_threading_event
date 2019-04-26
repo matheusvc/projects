@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+import time
+import serial
+import tkinter as tk
+from tkinter import ttk
+import threading, queue
+
+ser = serial.Serial(
+              
+    port='/dev/ttyUSB0',
+    baudrate = 19200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+    )
+
+class MyThread(threading.Thread):
+    
+    def __init__(self):    
+        super(MyThread, self).__init__()
+        
+        
+    def run(self):
+        global i
+        i = 1
+        with lock:
+            while True:
+                if lock.locked() == True:
+                    print('Lock state :', lock.locked())
+                    x = ser.readline()
+                    y = x.rstrip()
+                    z = y.decode('utf-8')
+                    print(z)
+                    ser.write(str.encode('AT+CSQ\r'))
+                    time.sleep(25)
+                    if (z.startswith("+CSQ")):
+                        a = int(z[5])
+                        if a >= 3:
+                            myq.put(i)
+                            lock.release()
+                            print('Qualidade do sinal', z[5], 'é suficiente')
+                            print(myq.size())
+                            print("Lock state : ", lock.locked())
+                            time.sleep(25)
+                            if myq.empty() == False:
+                                myq.empty()
+                                print('Esvaziando myq')
+                                print(myq.size())
+                                time.sleep(3)
+                            
+                        else:
+                            print('Buscando Sinal...')
+                            time.sleep(0.5)
+                else:
+                    if myq.empty() == False:
+                        pass
+                    else:
+                        lock.acquire()
+
+                    
+                    
+class Reader(threading.Thread):
+    
+    def __init__(self):    
+        super(Reader, self).__init__()
+        
+        
+    def run(self):
+        
+        if myq.empty() == False:
+            print('Reader starting, i greater than 1')
+            with lock:
+                while True:
+                    if lock.locked() == True:
+                        q = ser.readline()
+                        w = q.rstrip()
+                        e = w.decode('utf-8')
+                        if (e == 'SBDRING'):
+                            print ('Ring Alert recebido')
+                            lido = True
+                            ser.write(str.encode('AT+SBDIX\r'))
+                            time.sleep(5)
+                            ser.write(str.encode('AT+SBDRT\r'))
+                            time.sleep(2)
+                            assist_var = 0
+                            lista = []
+                            while len(lista) < 12:
+                                u = ser.readline()
+                                i = u.rstrip()
+                                o = i.decode('utf-8')
+                                if len(o) > 1 :
+                                    lista.append(o)
+                                    assist_var = assist_var + 1
+                                    #print(lista)
+                                    #print('assist_var = ', assist_var)
+                                if assist_var == 7:
+                                    print('Você recebeu :', lista[5])
+                                    lock.release()
+
+                    else:
+                        lock.acquire()
+                    
+                    
+lock = threading.Lock()
+
+myq = queue.Queue()
+
+                    
+                    
+thread = MyThread()
+thread.start()
+thread.join()
+
+doit = Reader()
+doit.start()
+doit.join()
