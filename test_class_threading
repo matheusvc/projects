@@ -15,43 +15,42 @@ ser = serial.Serial(
     timeout=1
     )
 
-
-lock = threading.Lock()
-
-
-class TestThreading():
+class MyThread(threading.Thread):
     
-    def __init__(self):
+    def __init__(self):    
+        super(MyThread, self).__init__()
         
-        thread = threading.Thread(target=self.run, args=())
-        thread.daemon = True
-        thread.start()
-        thread.join()
-
+        
     def run(self):
         
-        lock.acquire()
-        
-        while True:
-            x = ser.readline()
-            y = x.rstrip()
-            z = y.decode('utf-8')
-            print(z)
-            ser.write(str.encode('AT+CSQ\r'))
-            time.sleep(2)
-            if (z.startswith("+CSQ")):
-                a = int(z[5])
-                if a >= 3:
-                    print('Qualidade do sinal', z[5], 'é suficiente')
-                    #lock.release() #Quando sinal é suficiente, há erro com Lock no próximo ciclo do looping (?)
-                    time.sleep(6)
-                    #read_mt_message()
+        with lock:
+            print('Lock Acquired')
+            
+            while True:
+                if lock.locked() == True:
+                    x = ser.readline()
+                    y = x.rstrip()
+                    z = y.decode('utf-8')
+                    print(z)
+                    ser.write(str.encode('AT+CSQ\r'))
+                    time.sleep(2)
+                    if (z.startswith("+CSQ")):
+                        a = int(z[5])
+                        if a >= 3:
+                            print('Qualidade do sinal', z[5], 'é suficiente')
+                            lock.release() #Quando sinal é suficiente, há erro com Lock no próximo ciclo do looping (?)
+                            time.sleep(10)
+                            #read_mt_message()
+                        else:
+                            print('Buscando Sinal...')
+                            time.sleep(0.5)
                 else:
-                    print('Buscando Sinal...')
-                    time.sleep(0.5)
-        
-        
-        
-tr = TestThreading()
-time.sleep(1)
-print('First output')
+                    lock.acquire()
+
+                    
+lock = threading.Lock()
+                    
+                    
+thread = MyThread()
+thread.start()
+thread.join()
