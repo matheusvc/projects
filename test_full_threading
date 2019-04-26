@@ -36,19 +36,20 @@ class MyThread(threading.Thread):
                     z = y.decode('utf-8')
                     print(z)
                     ser.write(str.encode('AT+CSQ\r'))
-                    time.sleep(8)
+                    time.sleep(25)
                     if (z.startswith("+CSQ")):
                         a = int(z[5])
                         if a >= 3:
-                            print('Qualidade do sinal', z[5], 'é suficiente')
-                            lock.release()
                             i = i + 1
+                            lock.release()
+                            print('Qualidade do sinal', z[5], 'é suficiente')
                             print('primeiro print i: ',i)
                             print("Lock state : ", lock.locked())
-                            time.sleep(10)
+                            time.sleep(15)
                             if i >= 1:
                                 i = i - 1
                                 print('segundo print i: ',i)
+                                time.sleep(3)
                             
                         else:
                             print('Buscando Sinal...')
@@ -57,9 +58,56 @@ class MyThread(threading.Thread):
                     lock.acquire()
 
                     
+                    
+class Reader(threading.Thread):
+    
+    def __init__(self):    
+        super(Reader, self).__init__()
+        
+        
+    def run(self):
+        
+        global i
+        
+        if i >= 1:
+            print('Reader starting, i greater than 1')
+            with lock:
+                while True:
+                    q = ser.readline()
+                    w = q.rstrip()
+                    e = w.decode('utf-8')
+                    if (e == 'SBDRING'):
+                        print ('Ring Alert recebido')
+                        lido = True
+                        ser.write(str.encode('AT+SBDIX\r'))
+                        time.sleep(5)
+                        ser.write(str.encode('AT+SBDRT\r'))
+                        time.sleep(2)
+                        assist_var = 0
+                        lista = []
+                        while len(lista) < 12:
+                            u = ser.readline()
+                            i = u.rstrip()
+                            o = i.decode('utf-8')
+                            if len(o) > 1 :
+                                lista.append(o)
+                                assist_var = assist_var + 1
+                                #print(lista)
+                                #print('assist_var = ', assist_var)
+                            if assist_var == 7:
+                                print('Você recebeu :', lista[5])
+                                break
+                    
+                    
+                    
+                    
 lock = threading.Lock()
                     
                     
 thread = MyThread()
 thread.start()
 thread.join()
+
+doit = Reader()
+doit.start()
+doit.join()
