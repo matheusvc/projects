@@ -88,19 +88,19 @@ t2.join()
 ERROR:
 Exception in thread Thread-5:
 Traceback (most recent call last):
-  File "/home/telespazio/anaconda3/lib/python3.7/site-packages/serial/serialposix.py", line 501, in read
+  File "/home/anaconda3/lib/python3.7/site-packages/serial/serialposix.py", line 501, in read
     'device reports readiness to read but returned no data '
 serial.serialutil.SerialException: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/telespazio/anaconda3/lib/python3.7/threading.py", line 917, in _bootstrap_inner
+  File "/home/anaconda3/lib/python3.7/threading.py", line 917, in _bootstrap_inner
     self.run()
-  File "/home/telespazio/anaconda3/lib/python3.7/threading.py", line 865, in run
+  File "/home/anaconda3/lib/python3.7/threading.py", line 865, in run
     self._target(*self._args, **self._kwargs)
   File "<ipython-input-1-2509e5eda183>", line 48, in receiver
     q = ser.readline()
-  File "/home/telespazio/anaconda3/lib/python3.7/site-packages/serial/serialposix.py", line 509, in read
+  File "/home/anaconda3/lib/python3.7/site-packages/serial/serialposix.py", line 509, in read
     raise SerialException('read failed: {}'.format(e))
 serial.serialutil.SerialException: read failed: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
