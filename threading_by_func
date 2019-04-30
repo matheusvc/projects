@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+import time
+import serial
+import tkinter as tk
+from tkinter import ttk
+import threading, queue
+
+ser = serial.Serial(
+              
+    port='/dev/ttyUSB0',
+    baudrate = 19200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+    )
+
+def signal_checker():
+    while True:
+        x = ser.readline()
+        y = x.rstrip()
+        z = y.decode('utf-8')
+        print(z)
+        ser.write(str.encode('AT+CSQ\r'))
+        time.sleep(20)
+        if (z.startswith("+CSQ")):
+            a = int(z[5])
+            if a >= 3:
+                print('Qualidade do sinal', z[5], 'é suficiente')
+                my_stopper.set()
+                myq.put('signalup')
+                print('Event Set By Signal Checker')
+                time.sleep(20)
+                myq.queue.clear()
+            else:
+                print('Buscando Sinal...')
+                time.sleep(0.5)
+                
+                
+                
+                
+def receiver():
+    my_stopper.wait(10)
+    check = myq.get()
+    if check == 'signalup':
+        print('Receiver Started')
+        while True:
+            q = ser.readline()
+            w = q.rstrip()
+            e = w.decode('utf-8')
+            if (e == 'SBDRING'):
+                print ('Ring Alert recebido')
+                ser.write(str.encode('AT+SBDIX\r'))
+                time.sleep(5)
+                ser.write(str.encode('AT+SBDRT\r'))
+                time.sleep(2)
+                assist_var = 0
+                lista = []
+                while len(lista) < 12:
+                    u = ser.readline()
+                    i = u.rstrip()
+                    o = i.decode('utf-8')
+                    if len(o) > 1 :
+                        lista.append(o)
+                        assist_var = assist_var + 1
+                        #print(lista)
+                        #print('assist_var = ', assist_var)
+                    if assist_var == 7:
+                        print('Você recebeu :', lista[5])
+
+                
+my_stopper = threading.Event()
+lock = threading.Lock()
+myq = queue.Queue()
+
+
+t1 = threading.Thread(target = signal_checker)
+t2 = threading.Thread(target = receiver)
+
+t1.start()
+
+t2.start()
+t2.join()
