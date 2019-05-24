@@ -1,0 +1,48 @@
+#WRITER CODE:
+import random
+import time
+
+i=0
+
+while True:    
+    with open('datatest.txt', 'a+') as a:
+        line = str(i) + ',' + str(random.uniform(1,10)) + '\n'
+        a.write(line)
+        print(line)
+        i += 1
+        time.sleep(9)
+        
+#LIVE GRAPH TEST:
+#!/usr/bin/env python
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+
+
+fig = plt.figure()
+ax1 = fig.add_subplot(1,1,1)
+
+def animate(i):
+    print("inside animate")
+    pullData = open("datatest.txt","r").read()
+    dataArray = pullData.split('\n')
+    xar = []
+    yar = []
+
+    for eachLine in dataArray:
+        if len(eachLine)>1:
+            x,y = eachLine.split(',')
+            xar.append(float(x))
+            yar.append(float(y))
+
+    ax1.clear()
+    ax1.plot(xar,yar)
+
+    plt.xlabel('Hora')
+    plt.ylabel('Valor Dado')
+    plt.title('Pseudo-Sensor x Hora')
+
+
+ani = animation.FuncAnimation(fig, animate, interval=1000) 
+plt.show()
+    
