@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+import socket
+import time
+import datetime as dt
+
+HOST = socket.gethostname()
+PORT = 5999
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+s.bind((HOST,PORT))
+s.listen(10)
+
+conn, addr = s.accept()
+print('Conectado com', addr[0],':', str(addr[1]))
+
+while True:
+    data = s.recv(4096)
+    if not data:
+        break
+    print('Servidor recebeu :', data)
+    
+    with open('datatest.txt', 'a+') as a:
+        t = dt.datetime.now().strftime('%H:%M:%S')
+        line = str(t) + ',' + data + '\n'
+        a.write(line)
+        print(line)
+        time.sleep(2)
