@@ -16,14 +16,15 @@ conn, addr = s.accept()
 print('Conectado com', addr[0],':', str(addr[1]))
 
 while True:
-    data = s.recv(4096)
+    data = conn.recv(2048).decode('utf-8')
     if not data:
         break
-    print('Servidor recebeu :', data)
-    
+    print('Servidor recebeu :', repr(data))
     with open('datatest.txt', 'a+') as a:
         t = dt.datetime.now().strftime('%H:%M:%S')
-        line = str(t) + ',' + data + '\n'
+        line = str(t) + ',' + repr(data) + '\n'
         a.write(line)
         print(line)
         time.sleep(2)
+
+s.close()
