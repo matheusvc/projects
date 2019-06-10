@@ -1,0 +1,99 @@
+# SERVIDOR
+#!/usr/bin/env python
+import sqlite3
+import socket
+import time
+import datetime as dt
+
+HOST = ''
+PORT = 7999
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+s.bind((HOST,PORT))
+s.listen(10)
+
+conn, addr = s.accept()
+print('Conectado com', addr[0],':', str(addr[1]))
+
+con = sqlite3.connect('edgedb')
+c = con.cursor()
+
+#c.execute('CREATE TABLE edgedata (data FLOAT, timestamp TEXT)') // TABELA JÁ CRIADA
+
+
+while True:
+    data = conn.recv(2048).decode('utf-8')
+    if not data:
+        break
+    print('Servidor recebeu :', repr(data))
+    t = dt.datetime.now().strftime('%H:%M:%S')
+    c.execute('INSERT INTO edgedata VALUES (?,?)', (data, t))
+    con.commit()
+
+
+s.close()
+
+# CLIENTE
+#!/usr/bin/env python
+import socket
+import random
+import time
+
+
+HOST = socket.gethostname()
+PORT = 7999
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.connect((HOST,PORT))
+
+while True:
+    thing = str(random.uniform(1,5))
+    s.send(thing.encode())
+    time.sleep(20)
+
+s.close()
+
+#DYNAMIC PLOT
+#!/usr/bin/env python
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+import matplotlib.dates as mdates
+from dateutil import parser
+from bokeh.plotting import figure
+import sqlite3
+%matplotlib notebook
+
+fig = plt.figure()
+ax1 = fig.add_subplot(1,1,1)
+
+def animate(i):
+    print("inside animate")
+    
+    con = sqlite3.connect('edgedb')
+    c = con.cursor()
+    
+    c.execute('SELECT data, timestamp FROM edgedata')
+    data = c.fetchall()
+    
+    datas = []
+    dates = []
+    
+    for row in data:
+        datas.append(row[1])
+        dates.append(float(row[0]))
+
+    ax1.clear()
+    ax1.plot_date(datas,dates,'-')
+
+    plt.xlabel('Hora')
+    plt.xticks(rotation=45, ha='right')
+    plt.subplots_adjust(bottom=0.30)
+    plt.ylabel('Valor Dado')
+    plt.title('Pseudo-Sensor x Hora')
+
+ani = animation.FuncAnimation(fig, animate, interval=1000)
+plt.show()
