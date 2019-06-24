@@ -7,6 +7,11 @@ c = con.cursor()
 query = c.execute('SELECT picture FROM imagebank')
 data = c.fetchone()
 print(type(data[0]))
-thing = base64.b64decode(data[0])
-image_result = open('teste_img4.png', 'wb')
-image_result.write(thing)
+
+imagedata = data[0]
+print(type(data[0]), data[0])
+thing = base64.b64decode(imagedata)
+print(type(imagedata))
+image_result = open('jpgsymb.jpg', 'wb')
+image_result.write(imagedata)
+
