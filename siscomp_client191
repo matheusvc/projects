@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+import tkinter as tk
+from tkinter import filedialog
+import socket
+import random
+import time
+import datetime as dt
+import base64
+
+global arquivo
+global s
+global photostr
+
+HOST = socket.gethostname()
+PORT = 12999
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.connect((HOST,PORT))
+
+
+def openthat():
+    
+    global arquivo
+    global photostr
+
+    arquivo =  filedialog.askopenfilename(initialdir = "/", title = "Selecione o arquivo")
+    print (arquivo)
+    with open(arquivo, 'rb') as input_file:
+        photostr = base64.b64encode(input_file.read())
+        print(len(photostr))
+    return len(photostr)
+
+
+def sendimg():
+    
+    global photostr    
+    s.send(photostr)
+    time.sleep(20)
+    s.close()
+
+root = tk.Tk()
+root.title('Client Window')
+
+botao = tk.Button(root, text='Abrir Imagem', command = openthat)
+botao.pack()
+sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
+sendbtn.pack()
+
+root.mainloop()
