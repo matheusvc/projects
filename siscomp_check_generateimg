@@ -1,0 +1,12 @@
+import sqlite3
+import base64
+
+con = sqlite3.connect('edgedb')
+c = con.cursor()
+
+query = c.execute('SELECT picture FROM imagebank')
+data = c.fetchone()
+print(type(data[0]))
+thing = base64.b64decode(data[0])
+image_result = open('teste_img4.png', 'wb')
+image_result.write(thing)
