@@ -4,7 +4,7 @@ import socket
 import time
 import datetime as dt
 import base64
-
+import pickle
 
 HOST = ''
 PORT = 12999
@@ -22,24 +22,23 @@ con = sqlite3.connect('edgedb')
 c = con.cursor()
 
 #c.execute('CREATE TABLE imagebank (id INTEGER PRIMARY KEY AUTOINCREMENT, picture BLOB)') #TABELA JÁ CRIADA
-
+numba = 0
 
 while True:
     
-    data = conn.recv(8192).decode('utf-8')
+    data = conn.recv(4432).decode('utf-8')
+    print('data recv = ', data)
     archive = base64.b64decode(data)
     print('archive type =', type(archive))
-    #image_result = open('teste_img2.png', 'wb')
-    #image_result.write(archive)
-    c.execute('INSERT INTO imagebank (picture) VALUES (?)' , [archive])
+    print('archive = ', archive)
+    with open("image_receivedtest2.png", "wb") as image_file:
+        image_file.write(archive)
+    #c.execute('INSERT INTO imagebank (picture) VALUES (?)' , [archive])
     con.commit()
     numba += 1
 
     if not data:
         break
-    print('Servidor recebeu :', repr(data))
-    
-    
     
 
 s.close()
