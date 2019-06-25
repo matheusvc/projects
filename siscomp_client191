@@ -37,7 +37,7 @@ def sendimg():
     
     global photostr    
     s.send(photostr)
-    time.sleep(20)
+    time.sleep(10)
     s.close()
 
 root = tk.Tk()
