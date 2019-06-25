@@ -20,10 +20,10 @@ s.listen(10)
 conn, addr = s.accept()
 print('Conectado com', addr[0],':', str(addr[1]))
 
-con = sqlite3.connect('imagesdb.db')
+con = sqlite3.connect('testedb.db')
 c = con.cursor()
 
-#c.execute('CREATE TABLE imagesdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )') #TABELA JÁ CRIADA
+c.execute('CREATE TABLE imagensdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )') #TABELA JÁ CRIADA
 
 i = 0
 
@@ -39,8 +39,7 @@ while True:
         image_file.write(archive)
     thepath = str(os.getcwd()+'/'+name)
     hora = str(dt.datetime.now().strftime('%H:%M:%S'))
-    c.execute('INSERT INTO imagesdb (picturepath) VALUES (?)' , [thepath])
-    c.execute('INSERT INTO imagesdb (timestamp) VALUES(?)', [hora])
+    c.execute('INSERT INTO imagensdb (picturepath,timestamp) VALUES (?,?)' , (thepath,hora))
     con.commit()
     i += 1
 
