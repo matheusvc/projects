@@ -5,6 +5,8 @@ import time
 import datetime as dt
 import base64
 import pickle
+import os
+
 
 HOST = ''
 PORT = 12999
@@ -18,24 +20,29 @@ s.listen(10)
 conn, addr = s.accept()
 print('Conectado com', addr[0],':', str(addr[1]))
 
-con = sqlite3.connect('edgedb')
+con = sqlite3.connect('imagesdb.db')
 c = con.cursor()
 
-#c.execute('CREATE TABLE imagebank (id INTEGER PRIMARY KEY AUTOINCREMENT, picture BLOB)') #TABELA JÁ CRIADA
-numba = 0
+#c.execute('CREATE TABLE imagesdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )') #TABELA JÁ CRIADA
+
+i = 0
 
 while True:
-    
+    numba = str(i)
     data = conn.recv(4432).decode('utf-8')
     print('data recv = ', data)
     archive = base64.b64decode(data)
     print('archive type =', type(archive))
     print('archive = ', archive)
-    with open("image_receivedtest2.png", "wb") as image_file:
+    name = 'imagem'+numba+'.png'
+    with open(name, "wb") as image_file:
         image_file.write(archive)
-    #c.execute('INSERT INTO imagebank (picture) VALUES (?)' , [archive])
+    thepath = str(os.getcwd()+'/'+name)
+    hora = str(dt.datetime.now().strftime('%H:%M:%S'))
+    c.execute('INSERT INTO imagesdb (picturepath) VALUES (?)' , [thepath])
+    c.execute('INSERT INTO imagesdb (timestamp) VALUES(?)', [hora])
     con.commit()
-    numba += 1
+    i += 1
 
     if not data:
         break
