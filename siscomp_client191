@@ -6,14 +6,14 @@ import random
 import time
 import datetime as dt
 import base64
+import json
 
 global arquivo
 global s
-global photostr
+
 
 HOST = socket.gethostname()
 PORT = 12999
-
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.connect((HOST,PORT))
@@ -24,11 +24,12 @@ def openthat():
     global arquivo
     global photostr
 
-    arquivo =  filedialog.askopenfilename(initialdir = "/", title = "Selecione o arquivo")
+    arquivo =  filedialog.askopenfilename(initialdir = "/home/telespazio", title = "Selecione o arquivo")
     print (arquivo)
     with open(arquivo, 'rb') as input_file:
         photostr = base64.b64encode(input_file.read())
         print(len(photostr))
+        print('photostr =', photostr)
     return len(photostr)
 
 
@@ -40,11 +41,13 @@ def sendimg():
     s.close()
 
 root = tk.Tk()
-root.title('Client Window')
+root.title('Janela do Cliente')
 
 botao = tk.Button(root, text='Abrir Imagem', command = openthat)
 botao.pack()
 sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
 sendbtn.pack()
+closebtn = tk.Button(root, text='Fechar', command = root.destroy)
+closebtn.pack()
 
 root.mainloop()
