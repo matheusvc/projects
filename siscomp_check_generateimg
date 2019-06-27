@@ -1,29 +1,30 @@
 import sqlite3
 import base64
+import os
 
-con = sqlite3.connect('testedb.db')
+con = sqlite3.connect('testedb')
 c = con.cursor()
 
 query = c.execute('SELECT * FROM imagensdb')
 data = c.fetchall()
 for row in data:
     print(row[1])
-    
-term = '%'+'imagem0'+'%'
+term = '%'+'imagem7'+'%'
 query1 = c.execute('SELECT picturepath FROM imagensdb WHERE picturepath LIKE ?', (term,))
 data1 = query1.fetchone()
 
 testpath = '/home/telespazio/Área de Trabalho/imgs_socket/testimg.jpeg'
+blocksize = os.path.getsize(testpath)
+print(blocksize)
 
 for row in data1:
     print(row)
     lopath =row
-    print(lopath)
     
-with open(testpath, 'rb') as input_file:
+with open(testpath, 'rb') as input_file: # testepath trocado com lopath (extração por filepath do DB)
     photostr = base64.b64encode(input_file.read())
     print('photostr len =', len(photostr))
     
-with open('imgteste.jpeg', 'wb') as image_result:
+with open('imgteste2.jpeg', 'wb') as image_result:
     image_result.write(base64.decodebytes(photostr))
     print('done')
