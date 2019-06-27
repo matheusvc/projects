@@ -4,7 +4,6 @@ import socket
 import time
 import datetime as dt
 import base64
-import pickle
 import os
 
 
@@ -20,31 +19,37 @@ s.listen(10)
 conn, addr = s.accept()
 print('Conectado com', addr[0],':', str(addr[1]))
 
-con = sqlite3.connect('testedb.db')
-c = con.cursor()
 
-c.execute('CREATE TABLE imagensdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )') #TABELA JÁ CRIADA
+
+def writetodb():
+    global thepath
+    global hora
+    
+    con = sqlite3.connect('testedb')
+    c = con.cursor()
+    
+    c.execute('CREATE TABLE IF NOT EXISTS imagensdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )')
+    c.execute('INSERT INTO imagensdb (picturepath,timestamp) VALUES (?,?)' , (thepath,hora))
+    con.commit()
 
 i = 0
 
 while True:
     numba = str(i)
-    data = conn.recv(4432).decode('utf-8')
+    data = conn.recv(8864).decode('utf-8')
+    if not data:
+        break
     print('data recv = ', data)
     archive = base64.b64decode(data)
     print('archive type =', type(archive))
     print('archive = ', archive)
-    name = 'imagem'+numba+'.png'
+    name = 'imagem'+numba+'.jpeg'
     with open(name, "wb") as image_file:
         image_file.write(archive)
     thepath = str(os.getcwd()+'/'+name)
     hora = str(dt.datetime.now().strftime('%H:%M:%S'))
-    c.execute('INSERT INTO imagensdb (picturepath,timestamp) VALUES (?,?)' , (thepath,hora))
-    con.commit()
+    writetodb()
     i += 1
-
-    if not data:
-        break
     
 
 s.close()
