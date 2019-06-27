@@ -20,10 +20,8 @@ s.connect((HOST,PORT))
 
 
 def openthat():
-    
     global arquivo
     global photostr
-
     arquivo =  filedialog.askopenfilename(initialdir = "/home/telespazio", title = "Selecione o arquivo")
     print (arquivo)
     with open(arquivo, 'rb') as input_file:
@@ -34,7 +32,6 @@ def openthat():
 
 
 def sendimg():
-    
     global photostr    
     s.send(photostr)
     time.sleep(10)
@@ -42,7 +39,6 @@ def sendimg():
 
 root = tk.Tk()
 root.title('Janela do Cliente')
-
 botao = tk.Button(root, text='Abrir Imagem', command = openthat)
 botao.pack()
 sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
