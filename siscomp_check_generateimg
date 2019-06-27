@@ -1,17 +1,29 @@
 import sqlite3
 import base64
 
-con = sqlite3.connect('edgedb')
+con = sqlite3.connect('testedb.db')
 c = con.cursor()
 
-query = c.execute('SELECT picture FROM imagebank')
-data = c.fetchone()
-print(type(data[0]))
+query = c.execute('SELECT * FROM imagensdb')
+data = c.fetchall()
+for row in data:
+    print(row[1])
+    
+term = '%'+'imagem0'+'%'
+query1 = c.execute('SELECT picturepath FROM imagensdb WHERE picturepath LIKE ?', (term,))
+data1 = query1.fetchone()
 
-imagedata = data[0]
-print(type(data[0]), data[0])
-thing = base64.b64decode(imagedata)
-print(type(imagedata))
-image_result = open('jpgsymb.jpg', 'wb')
-image_result.write(imagedata)
+testpath = '/home/telespazio/Área de Trabalho/imgs_socket/testimg.jpeg'
 
+for row in data1:
+    print(row)
+    lopath =row
+    print(lopath)
+    
+with open(testpath, 'rb') as input_file:
+    photostr = base64.b64encode(input_file.read())
+    print('photostr len =', len(photostr))
+    
+with open('imgteste.jpeg', 'wb') as image_result:
+    image_result.write(base64.decodebytes(photostr))
+    print('done')
