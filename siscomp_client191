@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import messagebox
 import socket
 import random
 import time
@@ -18,6 +19,82 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.connect((HOST,PORT))
 
+def inicio():
+    root1 = tk.Tk()
+    usuario = tk.StringVar(root1)
+    senha = tk.StringVar(root1)
+    
+    def internauth():
+        lista_autenticar = ['autenticar', usuario.get(), senha.get()]
+        data = json.dumps(lista_autenticar)
+        s.sendall(data.encode())
+        data1 = s.recv(1024)
+        data2 = data1.decode()
+        print('data2 =', data2)
+        if (data2 == 'autenticado'):
+            messagebox.showinfo("Nice","Login efetuado com sucesso")
+            sistema()
+        else:
+            messagebox.showerror("Ops","Tente novamente")
+            
+    def cadastro():
+        window = tk.Tk()
+        
+        new_user = tk.StringVar(window)
+        new_passwd = tk.StringVar(window)
+        new_name = tk.StringVar(window)
+        
+        window.title('Janela de Cadastro')
+        lbl = tk.Label(window, text = 'Novo Usuário:')
+        lbl.grid(row=0, column=0)
+        lbl1 = tk.Label(window, text = 'Nova Senha:')
+        lbl1.grid(row=1, column=0)
+        lbl2 = tk.Label(window, text = 'Nome:')
+        lbl2.grid(row=2, column=0)
+            
+        ent1 = tk.Entry(window, textvariable = new_user)
+        ent1.grid(row=0, column=1)
+        ent2 = tk.Entry(window, textvariable = new_passwd)
+        ent2.grid(row=1, column=1)
+        ent3 = tk.Entry(window, textvariable = new_name)
+        ent3.grid(row=2, column=1)
+        
+        def gow():
+            lista_cadastro = ['cadastrar', new_user.get(), new_passwd.get(), new_name.get()]
+            datacad = json.dumps(lista_cadastro)
+            s.sendall(datacad.encode())
+            print('Dados', datacad, 'Enviados!')
+            window.destroy()
+        
+        bt = tk.Button(window, text='Cadastrar', command=gow)
+        bt.grid(row=3,column=1)
+        window.geometry("380x115+100+100")
+        window.mainloop()
+    
+
+    
+    
+    root1.title('Janela de Login')
+    
+    label1 = tk.Label(root1, text = 'Usuário:')
+    label1.grid(row=0, column=0)
+    
+    label2 = tk.Label(root1, text = 'Senha:')
+    label2.grid(row=1, column=0)
+    
+    e1 = tk.Entry(root1, textvariable = usuario)
+    e1.grid(row=0, column=1)
+    e2 = tk.Entry(root1, textvariable = senha)
+    e2.grid(row=1, column=1)
+    
+    bt = tk.Button(root1, text = 'Conectar', command = internauth)
+    bt.grid(row=2, column=0)
+    bt1 = tk.Button(root1, text = 'Cadastrar', command = cadastro)
+    bt1.grid(row=2, column=1)
+    
+    
+    root1.mainloop()
+    
 
 def openthat():
     global arquivo
@@ -32,18 +109,25 @@ def openthat():
 
 
 def sendimg():
-    global photostr    
+    global photostr
+    stg = 'img'
+    s.send(stg.encode())
+    print('Enviando imagem...')
     s.send(photostr)
-    time.sleep(10)
+    time.sleep(5)
     s.close()
+    
+def sistema():
+    root = tk.Tk()
+    root.title('Janela do Cliente')
+    botao = tk.Button(root, text='Abrir Imagem', command = openthat)
+    botao.pack()
+    sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
+    sendbtn.pack()
+    closebtn = tk.Button(root, text='Fechar', command = root.destroy)
+    closebtn.pack()
 
-root = tk.Tk()
-root.title('Janela do Cliente')
-botao = tk.Button(root, text='Abrir Imagem', command = openthat)
-botao.pack()
-sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
-sendbtn.pack()
-closebtn = tk.Button(root, text='Fechar', command = root.destroy)
-closebtn.pack()
+    root.mainloop()
 
-root.mainloop()
+if __name__ == '__main__':
+    inicio()
