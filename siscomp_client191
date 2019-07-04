@@ -62,6 +62,9 @@ def inicio():
         def gow():
             lista_cadastro = ['cadastrar', new_user.get(), new_passwd.get(), new_name.get()]
             datacad = json.dumps(lista_cadastro)
+            print('datacad tipo = ', type(datacad))
+            trypickle = json.dumps(lista_cadastro)
+            print('pickleformat tipo =', type(trypickle))
             s.sendall(datacad.encode())
             print('Dados', datacad, 'Enviados!')
             window.destroy()
@@ -110,12 +113,17 @@ def openthat():
 
 def sendimg():
     global photostr
-    stg = 'img'
-    s.send(stg.encode())
-    print('Enviando imagem...')
-    s.send(photostr)
+    listaevent = ['img']
+    palavra = json.dumps(listaevent)
+    s.sendall(palavra.encode())
     time.sleep(5)
-    s.close()
+    s.sendall(photostr)
+    
+def sendquit():
+    listquit = ['quit']
+    word = json.dumps(listquit)
+    s.sendall(word.encode())
+    root.destroy
     
 def sistema():
     root = tk.Tk()
@@ -124,7 +132,7 @@ def sistema():
     botao.pack()
     sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
     sendbtn.pack()
-    closebtn = tk.Button(root, text='Fechar', command = root.destroy)
+    closebtn = tk.Button(root, text='sair', command = sendquit )
     closebtn.pack()
 
     root.mainloop()
