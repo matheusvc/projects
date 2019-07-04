@@ -19,11 +19,13 @@ s.bind((HOST,PORT))
 
 client = []
 t = []
+i = 0
 
 
 def autenticacao():
     
     global data1
+    global nomeuser
     
     user1 = data1[1]
     passwd = data1[2]
@@ -32,14 +34,17 @@ def autenticacao():
     con = sqlite3.connect('siscompdb')
     c = con.cursor()
 
-    auth = c.execute('SELECT usuario FROM fullinfo WHERE usuario= ? AND password = ?', (user1,passwd))
-    if auth.fetchone() is not None:
+    auth = c.execute('SELECT usuario FROM fullinfo WHERE usuario= ? AND password = ?', (user1,passwd)).fetchone()
+    if auth is not None:
         word = 'autenticado'
         conn.sendall(word.encode())
+        print('Nome do usuário autenticado é :', auth[0])
+        nomeuser = auth[0]
+        client.append(nomeuser)
+        print('Lista de Clientes =', client)
     else:
         print('Login ou Senha incorretos')
-        worda = 'notautenticado'
-        conn.sendall(worda.encode())
+        conn.sendall('notautenticado')
         
     con.close()
             
@@ -59,89 +64,34 @@ def cadastro():
     con.commit()
     print('Dados Inseridos')
     con.close()
-
-
-def handler(conn):
-    print('Connected to', addr)
-    global data1
-
-    while True:
-        data = conn.recv(8864)
-        data1 = json.loads(data.decode())
-        print('Handler printing = ',data1[1], data1[2])
-        key = data1[0]
-        print(key)
-        if (key == 'cadastrar'):
-            cadastro()
-        elif (key == 'autenticar'):
-            autenticacao()
-        elif (key == 'img'):
-            readimg()
-        #elif (key == 'feed'):
-     
     
-    
+
 def writetodb():
     global thepath
     global hora
     
-    con = sqlite3.connect('siscomp')
-    c2 = con.cursor()
+    con = sqlite3.connect('testedb')
+    c = con.cursor()
     
-    c2.execute('CREATE TABLE IF NOT EXISTS imagensdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )')
-    c2.execute('INSERT INTO imagensdb (picturepath,timestamp) VALUES (?,?)' , (thepath,hora))
+    c.execute('CREATE TABLE IF NOT EXISTS imagensdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )')
+    c.execute('INSERT INTO imagensdb (picturepath,timestamp) VALUES (?,?)' , (thepath,hora))
     con.commit()
+    con.close()
+      
+def deleteuser():
+    global nomeuser
     
-    
-    
-i = 0
-
+    client.remove(nomeuser)
+        
+        
 def readimg():
-    while True:
-        dado = conn.recv(8864).decode('utf-8')
-        if not dado:
-            break
-        print('data recv = ', dado)
-        archive = base64.b64decode(dado)
-        print('archive = ', archive)
-        name = 'imagem'+numba+'.jpeg'
-        with open(name, "wb") as image_file:
-            image_file.write(archive)
-        thepath = str(os.getcwd()+'/'+name)
-        hora = str(dt.datetime.now().strftime('%H:%M:%S'))
-        writetodb()
+    global thepath
+    global hora
     
-
-while True:
-    s.listen(1)
-    conn, addr = s.accept()
-    print('Conectado com', addr[0],':', str(addr[1]))
-    thr = threading.Thread(target = handler, args = (conn,))
-    thr.start()
-    thr.join()
-
-#def writetodb():
-    #global thepath
-    #global hora
-    
-    #con = sqlite3.connect('testedb')
-    #c = con.cursor()
-    
-    #c.execute('CREATE TABLE IF NOT EXISTS imagensdb (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT )')
-    #c.execute('INSERT INTO imagensdb (picturepath,timestamp) VALUES (?,?)' , (thepath,hora))
-    #con.commit()
-    #con.close()
-
-
-
-    
-i = 0
-
-while True:
-    numba = str(i)
+    numbas = 10
+    numba = str(numbas)
+    print('Dentro de readimg func')
     data = conn.recv(8864).decode('utf-8')
-    if not data:
-        break
     print('data recv = ', data)
     archive = base64.b64decode(data)
     print('archive type =', type(archive))
@@ -151,5 +101,35 @@ while True:
         image_file.write(archive)
     thepath = str(os.getcwd()+'/'+name)
     hora = str(dt.datetime.now().strftime('%H:%M:%S'))
+    print('path = ', thepath, 'e hora =', hora)
     writetodb()
-    i += 1
+    
+    
+def handler(conn):
+    print('Connected to', addr)
+    global data1
+
+    while True:
+        data = conn.recv(2048)
+        data1 = json.loads(data.decode())
+        key = data1[0]
+        print('inside handler')
+        print(key)
+        if (key == 'cadastrar'):
+            cadastro()
+        elif (key == 'autenticar'):
+            autenticacao()
+        elif (key == 'img'):
+            readimg()
+        #elif (key == 'feed'):
+        elif (key == 'quit'):
+            deleteuser()
+
+while True:
+    s.listen(1)
+    conn, addr = s.accept()
+    print('Conectado com', addr[0],':', str(addr[1]))
+    thr = threading.Thread(target = handler, args = (conn,))
+    thr.start()
+    thr.join()
+    
