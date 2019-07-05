@@ -17,7 +17,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((HOST,PORT))
 
-client = []
+whoto = {}
 t = []
 i = 0
 
@@ -25,6 +25,7 @@ i = 0
 def autenticacao():
     
     global data1
+    global conn
     global nomeuser
     
     user1 = data1[1]
@@ -38,10 +39,10 @@ def autenticacao():
     if auth is not None:
         word = 'autenticado'
         conn.sendall(word.encode())
-        print('Nome do usuário autenticado é :', auth[0])
+        #print('Nome do usuário autenticado é :', auth[0])
         nomeuser = auth[0]
-        client.append(nomeuser)
-        print('Lista de Clientes =', client)
+        whoto[nomeuser] = conn
+        print('Dict de Clientes Autenticacao =', whoto)
     else:
         print('Login ou Senha incorretos')
         conn.sendall('notautenticado')
@@ -81,15 +82,16 @@ def writetodb():
 def deleteuser():
     global nomeuser
     
-    client.remove(nomeuser)
+    del whoto[nomeuser]
+    
+    print('Dicionário de Clientes :', whoto)
         
         
 def readimg():
     global thepath
     global hora
     
-    numbas = 10
-    numba = str(numbas)
+    numba = str(i)
     print('Dentro de readimg func')
     data = conn.recv(8864).decode('utf-8')
     print('data recv = ', data)
@@ -103,10 +105,17 @@ def readimg():
     hora = str(dt.datetime.now().strftime('%H:%M:%S'))
     print('path = ', thepath, 'e hora =', hora)
     writetodb()
+    i =+ 1
     
     
-def handler(conn):
-    print('Connected to', addr)
+def sendonline():
+    global whoto
+    a = list(whoto.keys())
+    b = json.dumps(a)
+    conn.send(b.encode())
+    
+    
+def handler(conn, addr):
     global data1
 
     while True:
@@ -124,12 +133,12 @@ def handler(conn):
         #elif (key == 'feed'):
         elif (key == 'quit'):
             deleteuser()
+        elif (key == 'onlines'):
+            sendonline()
 
 while True:
     s.listen(1)
     conn, addr = s.accept()
     print('Conectado com', addr[0],':', str(addr[1]))
-    thr = threading.Thread(target = handler, args = (conn,))
-    thr.start()
-    thr.join()
-    
+    thr = threading.Thread(target = handler, args = (conn, addr)).start()
+ 
