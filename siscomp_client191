@@ -54,7 +54,7 @@ def inicio():
             
         ent1 = tk.Entry(window, textvariable = new_user)
         ent1.grid(row=0, column=1)
-        ent2 = tk.Entry(window, textvariable = new_passwd)
+        ent2 = tk.Entry(window, textvariable = new_passwd, show = '*')
         ent2.grid(row=1, column=1)
         ent3 = tk.Entry(window, textvariable = new_name)
         ent3.grid(row=2, column=1)
@@ -63,8 +63,6 @@ def inicio():
             lista_cadastro = ['cadastrar', new_user.get(), new_passwd.get(), new_name.get()]
             datacad = json.dumps(lista_cadastro)
             print('datacad tipo = ', type(datacad))
-            trypickle = json.dumps(lista_cadastro)
-            print('pickleformat tipo =', type(trypickle))
             s.sendall(datacad.encode())
             print('Dados', datacad, 'Enviados!')
             window.destroy()
@@ -87,7 +85,7 @@ def inicio():
     
     e1 = tk.Entry(root1, textvariable = usuario)
     e1.grid(row=0, column=1)
-    e2 = tk.Entry(root1, textvariable = senha)
+    e2 = tk.Entry(root1, textvariable = senha, show = '*')
     e2.grid(row=1, column=1)
     
     bt = tk.Button(root1, text = 'Conectar', command = internauth)
@@ -119,12 +117,39 @@ def sendimg():
     time.sleep(5)
     s.sendall(photostr)
     
+    
 def sendquit():
     listquit = ['quit']
     word = json.dumps(listquit)
-    s.sendall(word.encode())
-    root.destroy
+    s.sendall(word.encode())    
+
     
+    
+def checkonline():
+    listacheck = ['onlines']
+    go = json.dumps(listacheck)
+    s.sendall(go.encode())
+    dado1 = s.recv(2048)
+    dado = dado1.decode()
+    print(dado)
+    #messagebox.showinfo('Clientes Onlines', dado)
+    
+    top = tk.Tk()
+    top.geometry("200x310")
+    
+    lbl = tk.Label(top, text="Selecione o usuário")
+    listbox = tk.Listbox(top)
+    
+    for element in dado:
+        listbox.insert(tk.END, listvariable=dado)
+        
+    lbl.pack()
+    listbox.pack()
+    
+    top.mainloop()
+    
+    
+        
 def sistema():
     root = tk.Tk()
     root.title('Janela do Cliente')
@@ -132,9 +157,14 @@ def sistema():
     botao.pack()
     sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
     sendbtn.pack()
-    closebtn = tk.Button(root, text='sair', command = sendquit )
+    closebtn = tk.Button(root, text='Desconectar', command = sendquit)
     closebtn.pack()
-
+    fechabtn = tk.Button(root, text='Fechar', command = root.destroy)
+    fechabtn.pack()
+    botao4 = tk.Button(root, text='Checar Onlines', command = checkonline)
+    botao4.pack()
+    
+    root.geometry("380x115+100+100")
     root.mainloop()
 
 if __name__ == '__main__':
