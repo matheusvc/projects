@@ -1,0 +1,389 @@
+#!/usr/bin/env python
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+import socket
+import random
+import time
+import datetime as dt
+import base64
+import json
+import re
+import ast
+from PIL import Image, ImageTk, ImageFile
+import threading
+import collections
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+
+global arquivo
+global s
+
+
+HOST = 'localhost'
+PORT = 12368
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.connect((HOST,PORT))
+
+#def opendirect():
+    
+#def directthread(s):
+#    print('inside directthread')
+    
+#    while True:
+        
+#        dota = s.recv(2048)
+#        if (dota.decode() == '["diretoyou"]'):
+#            print('Direct para você')
+#        else:
+#            pass
+    
+
+
+def inicio():
+    root1 = tk.Tk()
+    usuario = tk.StringVar(root1)
+    senha = tk.StringVar(root1)
+    
+    
+    def internauth():
+        
+        lista_autenticar = ['autenticar', usuario.get(), senha.get()]
+        data = json.dumps(lista_autenticar)
+        s.sendall(data.encode())
+        data1 = s.recv(1024)
+        data2 = data1.decode()
+        print('data2 =', data2)
+        if (data2 == 'autenticado'):
+            messagebox.showinfo("Nice","Login efetuado com sucesso")
+            sistema()
+        elif (data2 == 'noauth'):
+            messagebox.showerror("Ops","Tente novamente")
+            
+    def cadastro():
+        window = tk.Tk()
+        
+        new_user = tk.StringVar(window)
+        new_passwd = tk.StringVar(window)
+        new_name = tk.StringVar(window)
+        
+        window.title('Janela de Cadastro')
+        lbl = tk.Label(window, text = 'Novo Usuário:')
+        lbl.grid(row=0, column=0)
+        lbl1 = tk.Label(window, text = 'Nova Senha:')
+        lbl1.grid(row=1, column=0)
+        lbl2 = tk.Label(window, text = 'Nome:')
+        lbl2.grid(row=2, column=0)
+        
+            
+        ent1 = tk.Entry(window, textvariable = new_user)
+        ent1.grid(row=0, column=1)
+        ent2 = tk.Entry(window, textvariable = new_passwd, show = '*')
+        ent2.grid(row=1, column=1)
+        ent3 = tk.Entry(window, textvariable = new_name)
+        ent3.grid(row=2, column=1)
+        
+        
+        def gow():
+            lista_cadastro = ['cadastrar', new_user.get(), new_passwd.get(), new_name.get()]
+            datacad = json.dumps(lista_cadastro)
+            print('datacad tipo = ', type(datacad))
+            s.sendall(datacad.encode())
+            print('Dados', datacad, 'Enviados!')
+            window.destroy()
+        
+        bt = tk.Button(window, text='Cadastrar', command=gow)
+        bt.grid(row=3,column=1)
+        window.geometry("380x115+100+100")
+        window.mainloop()
+        bt.pack()
+    
+
+    
+    
+    root1.title('Janela de Login')
+    
+    label1 = tk.Label(root1, text = 'Usuário:')
+    label1.grid(row=0, column=0)
+    
+    label2 = tk.Label(root1, text = 'Senha:')
+    label2.grid(row=1, column=0)
+    
+    e1 = tk.Entry(root1, textvariable = usuario)
+    e1.grid(row=0, column=1)
+    e2 = tk.Entry(root1, textvariable = senha, show = '*')
+    e2.grid(row=1, column=1)
+    
+    bt = tk.Button(root1, text = 'Conectar', command = internauth)
+    bt.grid(row=2, column=0)
+    bt1 = tk.Button(root1, text = 'Cadastrar', command = cadastro)
+    bt1.grid(row=2, column=1)
+    
+    
+    
+    root1.mainloop()
+    
+
+def openthat():
+    global arquivo
+    global photostr
+    arquivo =  filedialog.askopenfilename(title = "Selecione o arquivo")
+    print (arquivo)
+    with open(arquivo, 'rb') as input_file:
+        photostr = base64.b64encode(input_file.read())
+        print(len(photostr))
+        print('photostr =', photostr)
+
+
+def sendimg():
+    global photostr
+    listaevent = ['img']
+    palavra = json.dumps(listaevent)
+    s.sendall(palavra.encode())
+    time.sleep(5)
+    s.sendall(photostr)
+    messagebox.showinfo('!','Imagem Enviada com Sucesso!')
+    
+    
+def sendquit():
+    listquit = ['quit']
+    word = json.dumps(listquit)
+    s.sendall(word.encode())    
+    messagebox.showinfo('!','Pronto! Você pode fechar o programa.')
+
+def checkallusers():
+    lc = ['allusers']
+    q = json.dumps(lc)
+    s.sendall(q.encode())
+    d1 = s.recv(2048)
+    d2 = d1.decode()
+    d = ast.literal_eval(d2)
+    print(d, type(d))
+    
+    au = tk.Tk()
+    au.geometry("350x420")
+    
+    def getpic():
+        global val
+        lgp = ['wannasee', val]
+        wrd = json.dumps(lgp)
+        s.sendall(wrd.encode())
+        allpics = s.recv(2048)
+        ap = allpics.decode()
+        al = ast.literal_eval(ap)
+        
+        def onslc(bn):
+            global v
+            
+            uy = bn.widget
+            po = uy.curselection()
+            if len(po) > 0:
+                dx = int(uy.curselection()[0])
+                v = uy.get(dx)
+                print('Selecionado =', v)
+        
+        def seepics():
+            print('inside seepics')
+            global v
+            global val
+            querover = ['fotox', v, val]
+            print(querover)
+            plk = json.dumps(querover)
+            s.sendall(plk.encode())
+            print('enviado picid')
+            pict = s.recv(147456).decode('utf-8')
+            print('pict =', pict)
+            file = base64.b64decode(pict)
+            
+            with open('Imagem.jpeg', "wb") as image_file:
+                image_file.write(file)
+                 
+                
+            imgint = tk.Toplevel()
+            immg = Image.open('Imagem.jpeg')
+            photo = ImageTk.PhotoImage(immg)
+            amb = tk.Label(imgint,image=photo)
+            amb.image = photo
+            amb.place(x=0,y=0)
+            imgint.geometry("400x350")
+            imgint.mainloop()
+            
+
+            
+        def likethat():
+            print('inside likethat')
+            global v
+            global val
+            print('val =', val)
+            opa = str(val)
+            opa = opa.replace("(","")
+            opa = opa.replace(")","")
+            opa = opa.replace(",","")
+            print('opa =', opa)
+            longl = ['likeshit', v, val]
+            print('longl =', longl)
+            longj = json.dumps(longl)
+            s.sendall(longj.encode())
+            messagebox.showinfo('Sucesso!','Seu Like foi enviado!')
+        
+        lp = tk.Tk()
+        lp.geometry("300x250")
+        tre = tk.Label(lp, text='Fotos disponíveis do usuário selecionado')
+        bye = tk.Button(lp, text='Visualizar Foto Selecionada', command = seepics)
+        buy = tk.Button(lp, text='Curtir Foto Selecionada', command = likethat)
+        buy.pack()
+        bye.pack()
+        tre.pack()
+        lbx = tk.Listbox(lp)
+        lbx.bind('<<ListboxSelect>>', onslc)
+        lbx.pack()
+        for item in al:
+            lbx.insert(tk.END, item)
+            
+        lp.mainloop()
+        
+    def onselec(etv):
+        global val
+        
+        wa = etv.widget
+        ba = wa.curselection()
+        if len(ba) > 0:
+            indx = int(wa.curselection()[0])
+            val = wa.get(indx)
+            print('Selecionado =', val)
+    
+    lab = tk.Label(au, text='Lista de Usuarios Cadastrados')
+    lb = tk.Listbox(au)
+    lab2 = tk.Label(au, text='Para ver as fotos, selecione um usuario e clique em Ver Fotos')
+    ui = tk.Button(au, text='Ver Fotos', command = getpic)
+    lb.bind('<<ListboxSelect>>', onselec)
+    
+    for i in d:
+        lb.insert(tk.END, i)
+        
+    lab.pack()
+    ui.pack()
+    lab2.pack()
+    lb.pack()
+    
+    au.mainloop()
+    
+def checkonline():
+    listacheck = ['onlines']
+    go = json.dumps(listacheck)
+    s.sendall(go.encode())
+    dado1 = s.recv(2048)
+    dado2 = dado1.decode()
+    print('dado1 decodificado = ', dado2, 'type =', type(dado2))
+    dado = ast.literal_eval(dado2)
+    print(dado, 'type =', type(dado))
+    print('tipo :', type(dado), 'lenght :', len(dado))
+    #messagebox.showinfo('Clientes Onlines', dado)
+    
+    top = tk.Tk()
+    top.geometry("400x500")
+    
+    def onselect(evt):
+        global value
+        
+        w = evt.widget
+        index = int(w.curselection()[0])
+        value = w.get(index)
+        print ('Selecionado = ', value)
+    
+    
+    lbl = tk.Label(top, text="Selecione o usuário destino e Carregue sua foto para enviar")
+    listbox = tk.Listbox(top)
+    listbox.bind('<<ListboxSelect>>', onselect)
+    
+    for element in dado:
+        listbox.insert(tk.END, element)
+        
+    def direct1():
+        global value
+        global photostring
+        
+        arq =  filedialog.askopenfilename(title = "Selecione o arquivo")
+        with open(arq, 'rb') as input_file:
+            photostring = base64.b64encode(input_file.read())
+            
+        lst = ['direct', value]
+        print(lst)
+        word = json.dumps(lst)
+        s.sendall(word.encode())
+        s.sendall(photostring)
+        
+        
+        
+    but = tk.Button(top, text="Enviar Foto", command = direct1)
+    but.pack()
+        
+    lbl.pack()
+    listbox.pack()
+    
+    top.mainloop()
+    
+def requestlikes():
+    ll = ['checklikes']
+    lld = json.dumps(ll)
+    s.sendall(lld.encode())
+    holy = s.recv(2048)
+    holy = holy.decode()
+    print('holy only decoded =',holy, type(holy))
+    jok = ast.literal_eval(holy)
+    print('ast literal = ', jok, type(jok))
+    print('____ID DA SUA FOTO E QUEM A CURTIU____')
+    messagebox.showinfo('!','Cheque seu console para ver as curtidas')
+    for i, value in jok.items():
+        print('ID da sua foto curtida :',i,'Quem curtiu :', jok[i])
+       
+
+    
+def requestviews():
+    vlst = ['myviews']
+    vls = json.dumps(vlst)
+    print(vls)
+    s.sendall(vls.encode())
+    vl = s.recv(2048)
+    vl1 = vl.decode()
+    print('vl1 decoded =', vl1, type(vl1))
+    klop = ast.literal_eval(vl1)
+    print('vl1 liretado =', klop, type(klop))
+    print('____SUAS VISUALIZACOES POR ID DE FOTO E QUEM AS VIU____')
+    messagebox.showinfo('!', 'Cheque seu console para ver as visualizacoes')
+    for i, value in klop.items():
+        print('ID da sua foto: ',i,'Quem visualizou :', klop[i])
+    
+    
+    
+    
+        
+def sistema():
+    root = tk.Tk()
+    root.title('Janela do Cliente')
+    oui = tk.Label(root, text='Para enviar uma imagem, clique em Abrir Imagem, escolha a imagem e clique em Enviar Imagem')
+    botao = tk.Button(root, text='Abrir Imagem', command = openthat)
+    botao.pack()
+    sendbtn = tk.Button(root, text='Enviar Imagem', command = sendimg)
+    sendbtn.pack()
+    botao4 = tk.Button(root, text='Checar quem está Online', command = checkonline)
+    botao4.pack()
+    botao5 = tk.Button(root, text='Checar todos os Usuarios', command = checkallusers)
+    botao5.pack()
+    botao6 = tk.Button(root, text='Checar curtidas', command = requestlikes)
+    botao6.pack()
+    botao7 = tk.Button(root, text='Checar Visualizacoes', command = requestviews)
+    botao7.pack()
+    closebtn = tk.Button(root, text='Desconectar', command = sendquit)
+    closebtn.pack()
+    
+            
+    #thre = threading.Thread(target = directthread, args = (s,)).start()
+    
+    root.geometry("350x220+100+100")
+    root.mainloop()
+
+if __name__ == '__main__':
+    inicio()
