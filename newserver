@@ -1,0 +1,218 @@
+import socket
+from _thread import *
+import threading
+import json
+import sqlite3
+import ast
+
+
+print_lock = threading.Lock()
+lock = threading.Lock()
+i_lock = threading.Lock()
+whoto = {}
+
+def autenticacao(username, usersenha, client_socket):
+    with print_lock:
+        print('Inside Autenticacao')
+        print('client_socket :', client_socket)
+    con = sqlite3.connect('siscompdb')
+    c = con.cursor()
+    auth = c.execute('SELECT usuario FROM clientsdb WHERE usuario = ? AND senha = ?', (username, usersenha)).fetchone()
+    if auth is not None:
+        word = 'autenticado'
+        client_socket.send(word.encode())
+        with lock:
+            whoto[username] = client_socket
+        with lock:
+            print('Dicionario de clientes Atualizado :', whoto)
+    else:
+        word1 = 'noauth'
+        client_socket.send(word1.encode())
+        
+def cadastro(username, usersenha, usernome):
+    with print_lock:
+        print('Inside Cadastro')
+    con = sqlite3.connect('siscompdb')
+    c = con.cursor()
+    c.execute('CREATE TABLE IF NOT EXISTS clientsdb (usuario TEXT, senha TEXT, nome TEXT)')
+    c.execute('INSERT INTO clientsdb (usuario, senha, nome) VALUES (?,?,?)', (username, usersenha, usernome))
+    con.commit()
+    con.close()
+    with print_lock:
+        print('Dados de', username, ' foram Cadastrados!')
+    
+def deleteuser(client_socket):
+    print('Deleteuser :', client_socket)
+    try:
+        with lock:
+            for k, v in list(whoto.items()):
+                if v == client_socket:
+                    del whoto[k]
+
+        print('Dicionario Atualizado :', whoto)
+        
+    except Exception:
+        import traceback
+        print(traceback.format_exc())
+        
+def sendonline(client_socket):
+    print('Inside Sendonline')
+    a = []
+    with lock:
+        for g in whoto.keys():
+            a.append(g)
+    print(a, type(a))
+    b = json.dumps(a)
+    client_socket.send(b.encode())
+    
+def sendallusers(client_socket):
+    con = sqlite3.connect('siscompdb')
+    c = con.cursor()
+    au = c.execute('SELECT usuario FROM clientsdb')
+    aul = list(au.fetchall())
+    auls = json.dumps(aul)
+    client_socket.send(auls.encode())
+    
+def sendthemall(victm, client_socket):
+    ab = ast.literal_eval(victm)
+    he = ab[1]
+    
+    nomedele1 = str(he)
+    nomedele = nomedele1.replace("[","")
+    nomedele = nomedele.replace("]","")
+    nomedele = nomedele.replace(",","")
+    
+    with print_lock:
+        print('Querem ver as fotos do ', he)
+    
+    
+def specificpic(picid, client_socket):
+    ac = ast.literal_evail(picid)
+    pic = ac[1]
+    whoown = ac[2]
+    pic1 = str(pic)
+    whoo = str(whoown)
+    pic1 = pic1.replace("[","")
+    pic1 = pic1.replace("]","")
+    whod = whoo.replace("[","")
+    whod = whoo.replace("]","")
+    whod = whoo.replace(",","")
+    whod = whoo.replace("'","")
+    with lock:
+        for k, v in whoto.items():
+            if whoto[k] == client_socket:
+                pessoa = str(k)
+                print('Na consulta do dicionario, ', pessoa )
+    
+    with print_lock:
+        print('Querem ver a foto ', pic1, ' do', whod)
+    con = sqlite3.connect('siscompdb')
+    c = con.cursor()
+    findpic = c.execute('SELECT picturepath FROM databaseimagem WHERE id = ?', (pic1,)).fetchone()
+    c.execute('CREATE TABLE IF NOT EXISTS visualdb (id TEXT, visualizador TEXT, visualizado TEXT)')
+    c.execute('INSERT INTO visualdb (id, visualizador, visualizado) VALUES (?,?,?)', (pic1, pessoa, whod) )
+    con.commit()
+    con.close()
+    
+    imgpath = findpic[0]
+    
+    with open(imgpath, 'rb') as input_file:
+        photostring = base64.b64encode(input_file.read())
+    client_socket.send(photostring)
+    with print_lock:
+        print('Imagem Enviada!')
+        
+        
+def writetodb(path, time, client_socket):
+    with print_lock:
+        print('Inside WritetoDB')
+    with lock:
+        for k, v in whoto.items():
+            if whoto[k] == client_socket:
+                viz = str(k)
+                with print_lock:
+                    print('Write to db, visualizador =', viz)
+                    
+    con = sqlite3.connect('siscompdb')
+    c = con.cursor()
+    c.execute('CREATE TABLE IF NOT EXISTS databaseimagem (id INTEGER PRIMARY KEY AUTOINCREMENT, picturepath TEXT, timestamp TEXT, usuario TEXT)')
+    c.execute('INSERT INTO databaseimagem (picturepath,timestamp,usuario) VALUES (?,?,?)' , (path, time, viz))        
+    con.commit()
+    con.close()
+        
+def readimg(client_socket):
+    numba = str(i)
+    with print_lock:
+        print('Dentro de ReadImg')
+    data = client_socket.recv(147456).decode('utf-8')
+    archv = base64.b64decode(data)
+    name = 'imagem'+numba+'.jpeg'
+    with open(name, "wb") as image_file:
+        image_file.write(archv)
+    thepath = str(os.getcwd()+'/'+name)
+    hora = str(dt.datetime.now().strftime('%H:%M:%S'))
+    writetodb(thepath, hora, client_socket)
+    
+    
+def threaded(client_socket, addr):
+    while True:
+        data = client_socket.recv(2048)
+        datatest = data.decode()
+        print('Dado Recebido de ', addr[0], 'foi :', data)
+        data1 = json.loads(data.decode())
+        key = data1[0]
+        print('inside handler')
+        print('Chave = ', key)
+        print('Temos ', len(whoto.keys()), ' clientes online')
+        if (key == 'cadastrar'):
+            cadastro(data1[1], data1[2], data1[3])
+        elif (key == 'autenticar'):
+            autenticacao(data1[1], data1[2], client_socket)
+        elif (key == 'img'):
+            readimg(client_socket)
+        elif (key == 'quit'):
+            deleteuser(client_socket)
+        elif (key == 'onlines'):
+            sendonline(client_socket)
+        elif (key == 'allusers'):
+            sendallusers(client_socket)
+        elif (key == 'direct'):
+            directhat()
+        elif (key == 'wannasee'):
+            sendthemall(datatest, client_socket)
+        elif (key == 'fotox'):
+            specificpic(datatest, client_socket)
+        elif (key == 'likeshit'):
+            likeinc()
+        elif (key == 'checklikes'):
+            wholiked()
+        elif (key =='myviews'):
+            sendviews()
+    
+
+def Main():
+    global i
+    host = "" 
+    port = 12368
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+    s.bind((host, port)) 
+    print("Socket binded to port:", port) 
+  
+    s.listen(5) 
+    print("Connection Established") 
+    i = 0
+   
+    while True: 
+        c, addr = s.accept() 
+
+        with print_lock:
+            print('Connected to :', addr[0], ':', addr[1]) 
+
+        start_new_thread(threaded, (c, addr))
+        
+    
+  
+  
+if __name__ == '__main__': 
+    Main() 
+
