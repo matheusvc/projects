@@ -1,0 +1,80 @@
+import time
+import serial
+import tkinter as tk
+from tkinter import ttk
+import time
+import datetime as dt
+import random
+from _thread import *
+import threading
+
+    
+def enough_signal_write(con, evt):
+    
+    print('Dentro da thread write, sem evento setado')
+    event_set = evt.wait(.1)
+    
+    if event_set:
+        
+            print('Evento = True. Dentro da Thread com evento')
+            thing = str(random.uniform(1,3))
+            hora = str(dt.datetime.now().strftime('%H:%M:%S'))
+            pack = thing + ',' + hora
+            print('Pack = ', pack)
+            
+            while evt.is_set() == True:
+                v = con.readline()
+                b = v.rstrip()
+                n = b.decode('utf-8')
+                if n != '':
+                    print(n)
+
+                con.write(str.encode('AT+SBDWT\r'))
+                time.sleep(7)
+                con.write(str.encode(pack))
+                ser.write(str.encode('\r'))
+                time.sleep(5)
+                con.write(str.encode('AT+SBDIX\r'))
+                time.sleep(5)
+                evt.clear()
+    
+        
+            
+if __name__ == '__main__':
+    
+    event = threading.Event()
+    print('Event is =', event.is_set())
+    
+    ser = serial.Serial(
+              
+    port='/dev/ttyUSB0',
+    baudrate = 19200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+    )
+    
+    while event.is_set() == False:
+        x = ser.readline()
+        y = x.rstrip()
+        z = y.decode('utf-8')
+        if z != '':
+            print(z)
+            
+        ser.write(str.encode('AT+CSQ\r'))
+        time.sleep(7)
+        if (z.startswith("+CSQ")):
+            a = int(z[5])
+            if a >= 3:
+                print('Qualidade do sinal', z[5], 'é suficiente. Setando Evento')
+                event.set()
+                print('Evento esta ativo? ', event.is_set())
+                event.wait(5)
+            else:
+                print('Buscando Sinal...')
+                
+    thread1 = threading.Thread(target = enough_signal_write, args = (ser, event))
+    thread1.start()
+    thread1.join()
+    
