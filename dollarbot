@@ -1,0 +1,72 @@
+import requests
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import time
+import datetime as dt
+
+
+def doit():
+    
+    url = 'https://api.exchangerate-api.com/v4/latest/USD'
+
+    response = requests.get(url)
+    data = response.json()
+
+    data1 = str(data)
+    data2 = data1.split(',')
+
+    matching = str([s for s in data2 if "BRL" in s])
+    matching = matching.replace('"', '')
+    print(matching)
+    
+    hour = dt.datetime.now().strftime('%H:%M do dia  %d/%m')
+    hour = str(hour)
+    
+
+
+    if matching:
+
+        # create message object instance
+        msg = MIMEMultipart()
+
+        message = "O dólar hoje está custando", matching, ' Hora da consulta : ', hour
+        print(message)
+
+        message = str(message)
+        message = message.replace('(','')
+        message = message.replace("'","")
+        message = message.replace(',','')
+        message = message.replace('[','')
+        message = message.replace(']','')
+        message = message.replace(')','')
+        message = message.replace('"','')
+
+        print(message)
+
+        password = "password"
+        msg['From'] = "from@mail.com"
+        msg['To'] = "to@mail.com
+        msg['Subject'] = "Preço do Dólar Hoje"
+
+
+        msg.attach(MIMEText(message, 'plain'))
+
+
+        server = smtplib.SMTP('smtp.gmail.com: 587')
+
+        server.starttls()
+        server.login(msg['From'], password)
+        server.sendmail(msg['From'], msg['To'], msg.as_string())
+
+        server.quit()
+
+        print("Email Enviado com Sucesso para : %s" % (msg['To']))
+        time.sleep(120)
+        
+if __name__ == '__main__':
+    print('eMail Sender Started')
+    while True:
+        nowtime = dt.datetime.now().strftime('%H:%M')
+        if nowtime == '18:09':
+            doit()
